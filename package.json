@@ -1,9 +1,12 @@
 {
   "name": "visor-logs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Visor de logs de Java para escritorio",
   "main": "main.js",
-  "author": "Visor de Logs",
+  "author": {
+    "name": "Ángel Giménez",
+    "email": "gimenezangel84@gmail.com"
+  },
   "scripts": {
     "start": "electron . --no-sandbox",
     "dist:win": "electron-builder --win",
@@ -16,7 +19,7 @@
   },
   "build": {
     "appId": "com.visorlogs.app",
-    "productName": "Visor de Logs",
+    "productName": "Visor-de-Logs",
     "directories": {
       "output": "dist"
     },
@@ -38,10 +41,15 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb"
       ],
       "category": "Utility",
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "executableName": "visor-logs",
+      "desktop": {
+        "Name": "Visor de Logs"
+      }
     }
   }
 }
