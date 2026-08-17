@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visor de Logs</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div id="app">
+    <div id="menuBar">
+      <div class="menu-item interactive" id="menuFile">
+        Archivo
+        <div class="menu-dropdown" id="fileDropdown">
+          <div class="menu-option" id="openFileOption">
+            <span>Abrir archivo de log...</span>
+            <span class="menu-shortcut">Ctrl+O</span>
+          </div>
+          <div class="menu-separator"></div>
+          <div class="menu-option has-submenu" id="recentFilesOption">
+            <span>Archivos recientes</span>
+            <span class="submenu-arrow">▸</span>
+            <div class="submenu" id="recentFilesSubmenu">
+              <div class="submenu-empty">No hay archivos recientes</div>
+            </div>
+          </div>
+          <div class="menu-separator"></div>
+          <div class="menu-option" id="quitOption">
+            <span>Salir</span>
+          </div>
+        </div>
+      </div>
+      <div class="menu-item interactive" id="menuHelp">
+        Ayuda
+        <div class="menu-dropdown" id="helpDropdown">
+          <div class="menu-option" id="aboutOption">
+            <span>Acerca de Visor de Logs</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabBar"></div>
+
+    <div id="subHeader">
+      <span id="statusBar">Sin archivo cargado</span>
+      <input type="text" id="searchInput" placeholder="Filtrar líneas..." />
+    </div>
+
+    <main>
+      <div id="console"></div>
+    </main>
+  </div>
+
+  <div id="aboutModal">
+    <div class="about-box">
+      <h2>Visor de Logs</h2>
+      <div class="about-version">Versión 1.0.0</div>
+      <div class="about-desc">
+        Aplicación de escritorio basada en Electron para visualizar archivos de logs.<br/>
+        <h4 class="align-right">Ángel Giménez - 2026</h4>
+      </div>
+      <div class="about-actions">
+        <button class="about-close-btn" id="aboutCloseBtn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

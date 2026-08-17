@@ -1,0 +1,46 @@
+{
+  "name": "visor-logs",
+  "version": "1.0.0",
+  "description": "Visor de logs de Java para escritorio",
+  "main": "main.js",
+  "author": "Visor de Logs",
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "dist:all": "electron-builder --win --linux"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.visorlogs.app",
+    "productName": "Visor de Logs",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "package.json",
+      "build/icon.png"
+    ],
+    "icon": "build/icon.png",
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility",
+      "icon": "build/icon.png"
+    }
+  }
+}
