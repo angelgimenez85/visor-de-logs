@@ -25,6 +25,7 @@
       "preload.js",
       "renderer.js",
       "index.html",
+      "assets/**/*",
       "package.json",
       "build/icon.png"
     ],
