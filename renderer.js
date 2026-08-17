@@ -21,7 +21,7 @@ let activeFilePath = null;
 const DATE_REGEX = /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?)?\b|\b\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?\b/g;
 
 // Detecta el nivel del log (primera aparición en la línea)
-const LEVEL_REGEX = /\b(FATAL|ERROR|WARNING|WARN|INFO)\b/i;
+const LEVEL_REGEX = /\b(FATAL|SEVERE|ERROR|WARNING|WARN|INFO)\b/i;
 
 // Una línea inicia una entrada nueva si arranca con fecha/hora o con el nivel;
 // cualquier otra línea (p. ej. un stack trace) se considera continuación de la anterior.
@@ -40,7 +40,7 @@ function levelClass(level) {
   const upper = level.toUpperCase();
   if (upper === 'INFO') return 'lvl-info';
   if (upper === 'WARN' || upper === 'WARNING') return 'lvl-warn';
-  return 'lvl-error'; // ERROR / FATAL
+  return 'lvl-error'; // ERROR / FATAL / SEVERE
 }
 
 function entryLevelKey(level) {
@@ -48,7 +48,7 @@ function entryLevelKey(level) {
   const upper = level.toUpperCase();
   if (upper === 'INFO') return 'info';
   if (upper === 'WARN' || upper === 'WARNING') return 'warn';
-  return 'error'; // ERROR / FATAL
+  return 'error'; // ERROR / FATAL / SEVERE
 }
 
 function formatLine(rawLine) {
