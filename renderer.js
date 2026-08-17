@@ -9,11 +9,13 @@ const recentFilesSubmenu = document.getElementById('recentFilesSubmenu');
 const aboutOption = document.getElementById('aboutOption');
 const aboutModal = document.getElementById('aboutModal');
 const aboutCloseBtn = document.getElementById('aboutCloseBtn');
+const cursorPosEl = document.getElementById('cursorPos');
 
 const RECENT_KEY = 'visor-logs:recentFiles';
 const MAX_RECENT = 10;
+const NEAR_BOTTOM_THRESHOLD = 60;
 
-// tabs: Map<filePath, { filePath, fileName, contentEl, filterTerm }>
+// tabs: Map<filePath, { filePath, fileName, contentEl, filterTerm, nextLineNumber, lastEntryState }>
 const tabs = new Map();
 let activeFilePath = null;
 
@@ -25,7 +27,7 @@ const LEVEL_REGEX = /\b(FATAL|SEVERE|ERROR|WARNING|WARN|INFO)\b/i;
 
 // Una línea inicia una entrada nueva si arranca con fecha/hora o con el nivel;
 // cualquier otra línea (p. ej. un stack trace) se considera continuación de la anterior.
-const ENTRY_START_REGEX = /^\[?(?:\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}:\d{2})?|\d{2}:\d{2}:\d{2}|(?:FATAL|ERROR|WARNING|WARN|INFO)\b)/i;
+const ENTRY_START_REGEX = /^\[?(?:\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}:\d{2})?|\d{2}:\d{2}:\d{2}|(?:FATAL|SEVERE|ERROR|WARNING|WARN|INFO)\b)/i;
 
 function escapeHtml(text) {
   return text
@@ -82,16 +84,57 @@ function groupIntoEntries(lines) {
   return entries;
 }
 
-function renderEntry(entry, startLine) {
-  const firstLine = entry[0];
+/**
+ * Agrega una línea de continuación (p. ej. un renglón de stack trace) a una
+ * entrada ya renderizada, creando el contenedor de líneas extra la primera vez.
+ * Se usa tanto al construir el log inicial como al recibir nuevas líneas en vivo.
+ */
+function appendContinuationLine(entryState, line) {
+  if (!entryState.extraEl) {
+    entryState.extraEl = document.createElement('div');
+    entryState.extraEl.className = 'entry-extra';
+    entryState.wrapper.appendChild(entryState.extraEl);
+
+    entryState.countEl = document.createElement('span');
+    entryState.countEl.className = 'entry-count';
+    const firstLineSpan = entryState.header.querySelector('.entry-first-line');
+    entryState.header.insertBefore(entryState.countEl, firstLineSpan);
+  }
+
+  entryState.lines.push(line);
+  const lineNo = entryState.startLine + entryState.lines.length - 1;
+
+  const lineEl = document.createElement('span');
+  lineEl.className = 'log-line';
+  const lineNoEl = document.createElement('span');
+  lineNoEl.className = 'line-no';
+  lineNoEl.textContent = lineNo;
+  lineEl.appendChild(lineNoEl);
+  const contentEl = document.createElement('span');
+  contentEl.className = 'line-content';
+  contentEl.innerHTML = formatLine(line);
+  lineEl.appendChild(contentEl);
+  entryState.extraEl.appendChild(lineEl);
+
+  const extraCount = entryState.lines.length - 1;
+  entryState.countEl.textContent = `(+${extraCount} línea${extraCount === 1 ? '' : 's'})`;
+
+  entryState.wrapper.dataset.raw += '\n' + line.toLowerCase();
+}
+
+/**
+ * Construye el DOM de una entrada nueva a partir de su primera línea y
+ * devuelve un estado editable (para poder ir agregándole líneas después,
+ * tanto durante el parseo inicial como en vivo).
+ */
+function buildEntryState(firstLine, startLine) {
   const levelMatch = firstLine.match(LEVEL_REGEX);
   const level = levelMatch ? levelMatch[0].toUpperCase() : null;
   const levelKey = entryLevelKey(level);
-  const hasExtraLines = entry.length > 1;
 
   const wrapper = document.createElement('div');
   wrapper.className = 'log-entry collapsible collapsed' + (levelKey ? ` entry-${levelKey}` : '');
-  wrapper.dataset.raw = entry.join('\n').toLowerCase();
+  wrapper.dataset.raw = firstLine.toLowerCase();
 
   const header = document.createElement('span');
   header.className = 'log-line log-entry-header';
@@ -107,15 +150,8 @@ function renderEntry(entry, startLine) {
   toggle.textContent = '▸';
   header.appendChild(toggle);
 
-  if (hasExtraLines) {
-    const count = document.createElement('span');
-    count.className = 'entry-count';
-    count.textContent = `(+${entry.length - 1} línea${entry.length - 1 === 1 ? '' : 's'})`;
-    header.appendChild(count);
-  }
-
   const headerText = document.createElement('span');
-  headerText.className = 'entry-first-line';
+  headerText.className = 'entry-first-line line-content';
   headerText.innerHTML = formatLine(firstLine);
   header.appendChild(headerText);
 
@@ -130,25 +166,14 @@ function renderEntry(entry, startLine) {
 
   wrapper.appendChild(header);
 
-  if (entry.length > 1) {
-    const extra = document.createElement('div');
-    extra.className = 'entry-extra';
-    entry.slice(1).forEach((line, i) => {
-      const lineEl = document.createElement('span');
-      lineEl.className = 'log-line';
-      const extraLineNo = document.createElement('span');
-      extraLineNo.className = 'line-no';
-      extraLineNo.textContent = startLine + i + 1;
-      lineEl.appendChild(extraLineNo);
-      const extraContent = document.createElement('span');
-      extraContent.innerHTML = formatLine(line);
-      lineEl.appendChild(extraContent);
-      extra.appendChild(lineEl);
-    });
-    wrapper.appendChild(extra);
-  }
-
-  return wrapper;
+  return {
+    wrapper,
+    header,
+    extraEl: null,
+    countEl: null,
+    lines: [firstLine],
+    startLine
+  };
 }
 
 function buildLogContent(content) {
@@ -160,18 +185,75 @@ function buildLogContent(content) {
     lines = lines.slice(0, -1);
   }
 
-  const entries = groupIntoEntries(lines);
+  const groups = groupIntoEntries(lines);
   let cursor = 1;
-  entries.forEach((entry) => {
-    container.appendChild(renderEntry(entry, cursor));
-    cursor += entry.length;
+  let lastEntryState = null;
+
+  groups.forEach((entryLines) => {
+    const state = buildEntryState(entryLines[0], cursor);
+    entryLines.slice(1).forEach((line) => appendContinuationLine(state, line));
+    container.appendChild(state.wrapper);
+    cursor += entryLines.length;
+    lastEntryState = state;
   });
 
-  return container;
+  return { container, nextLineNumber: cursor, lastEntryState };
+}
+
+function isScrolledNearBottom() {
+  return consoleEl.scrollTop + consoleEl.clientHeight >= consoleEl.scrollHeight - NEAR_BOTTOM_THRESHOLD;
 }
 
 function scrollToBottom() {
   consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+/**
+ * Calcula la línea (según el gutter) y la columna de texto donde está
+ * parado el cursor, a partir de la selección actual del navegador.
+ */
+function computeLineAndColumn() {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+
+  const range = selection.getRangeAt(0);
+  const node = range.startContainer;
+  const anchorEl = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+  if (!anchorEl || !consoleEl.contains(anchorEl)) return null;
+
+  const lineEl = anchorEl.closest('.log-line');
+  if (!lineEl) return null;
+
+  const lineNoEl = lineEl.querySelector('.line-no');
+  if (!lineNoEl) return null;
+  const line = lineNoEl.textContent.trim();
+
+  const contentEl = lineEl.querySelector('.line-content');
+  let column = 1;
+
+  if (contentEl && contentEl.contains(node)) {
+    const walker = document.createTreeWalker(contentEl, NodeFilter.SHOW_TEXT);
+    let charCount = 0;
+    let current;
+    while ((current = walker.nextNode())) {
+      if (current === node) {
+        charCount += range.startOffset;
+        break;
+      }
+      charCount += current.textContent.length;
+    }
+    column = charCount + 1;
+  }
+
+  return { line, column };
+}
+
+function updateCursorPosition() {
+  if (!cursorPosEl) return;
+  const pos = computeLineAndColumn();
+  if (pos) {
+    cursorPosEl.textContent = `Ln ${pos.line}, Col ${pos.column}`;
+  }
 }
 
 function applyFilter(query) {
@@ -191,6 +273,67 @@ function applyFilter(query) {
     statusBar.textContent = `${visibleCount} de ${entries.length} entradas coinciden con "${query}"`;
   } else {
     statusBar.textContent = `${entries.length} entradas cargadas`;
+  }
+}
+
+function refreshStatusBarIfActive(filePath) {
+  if (activeFilePath !== filePath) return;
+
+  const term = searchInput.value.trim();
+  const entries = consoleEl.querySelectorAll('.log-entry');
+  if (term === '') {
+    statusBar.textContent = `${entries.length} entradas cargadas`;
+  } else {
+    const visible = consoleEl.querySelectorAll('.log-entry:not(.hidden)').length;
+    statusBar.textContent = `${visible} de ${entries.length} entradas coinciden con "${term}"`;
+  }
+}
+
+/* ---------------- Recarga automática en vivo ---------------- */
+
+function handleLogFileChanged({ filePath, type, lines, content }) {
+  const tab = tabs.get(filePath);
+  if (!tab) return;
+
+  if (type === 'reloaded') {
+    const { container, nextLineNumber, lastEntryState } = buildLogContent(content);
+    tab.contentEl = container;
+    tab.nextLineNumber = nextLineNumber;
+    tab.lastEntryState = lastEntryState;
+
+    if (activeFilePath === filePath) {
+      consoleEl.innerHTML = '';
+      consoleEl.appendChild(tab.contentEl);
+      applyFilter(tab.filterTerm || '');
+      scrollToBottom();
+    }
+    return;
+  }
+
+  if (type === 'appended' && Array.isArray(lines) && lines.length > 0) {
+    const wasNearBottom = activeFilePath === filePath && isScrolledNearBottom();
+    const term = (tab.filterTerm || '').trim().toLowerCase();
+
+    lines.forEach((line) => {
+      let entryState;
+      if (tab.lastEntryState && !ENTRY_START_REGEX.test(line)) {
+        appendContinuationLine(tab.lastEntryState, line);
+        entryState = tab.lastEntryState;
+      } else {
+        entryState = buildEntryState(line, tab.nextLineNumber);
+        tab.contentEl.appendChild(entryState.wrapper);
+        tab.lastEntryState = entryState;
+      }
+      tab.nextLineNumber++;
+
+      if (term !== '') {
+        const matches = entryState.wrapper.dataset.raw.includes(term);
+        entryState.wrapper.classList.toggle('hidden', !matches);
+      }
+    });
+
+    refreshStatusBarIfActive(filePath);
+    if (wasNearBottom) scrollToBottom();
   }
 }
 
@@ -295,9 +438,11 @@ function switchTab(filePath) {
   applyFilter(searchInput.value);
   renderTabBar();
   scrollToBottom();
+  if (cursorPosEl) cursorPosEl.textContent = 'Ln 1, Col 1';
 }
 
 function closeTab(filePath) {
+  window.api.unwatchLogFile(filePath);
   tabs.delete(filePath);
 
   if (activeFilePath === filePath) {
@@ -310,6 +455,7 @@ function closeTab(filePath) {
       searchInput.value = '';
       statusBar.textContent = 'Sin archivo cargado';
       renderTabBar();
+      if (cursorPosEl) cursorPosEl.textContent = 'Ln —, Col —';
     }
   } else {
     renderTabBar();
@@ -323,10 +469,19 @@ function openOrSwitchTab(filePath, content) {
   }
 
   const fileName = filePath.split(/[\\/]/).pop();
-  const contentEl = buildLogContent(content);
+  const { container, nextLineNumber, lastEntryState } = buildLogContent(content);
 
-  tabs.set(filePath, { filePath, fileName, contentEl, filterTerm: '' });
+  tabs.set(filePath, {
+    filePath,
+    fileName,
+    contentEl: container,
+    filterTerm: '',
+    nextLineNumber,
+    lastEntryState
+  });
+
   switchTab(filePath);
+  window.api.watchLogFile(filePath);
 }
 
 async function openLogFile() {
@@ -414,5 +569,9 @@ searchInput.addEventListener('input', (e) => {
   }
   applyFilter(term);
 });
+
+window.api.onLogFileChanged(handleLogFileChanged);
+
+document.addEventListener('selectionchange', updateCursorPosition);
 
 renderRecentFilesMenu();

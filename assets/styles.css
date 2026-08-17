@@ -485,3 +485,18 @@
     }
 
     .align-right { text-align: right;}
+
+    /* ---------- Barra de estado inferior (Ln / Col) ---------- */
+    #statusFooter {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 3px 12px;
+      background: var(--bg-menubar);
+      border-top: 1px solid var(--border);
+      font-family: "SF Mono", "Fira Code", Consolas, Menlo, monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      user-select: none;
+    }
