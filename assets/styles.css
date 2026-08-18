@@ -3,6 +3,8 @@
       --bg-tabbar: #21252d;
       --bg-tab-active: #2d323d;
       --bg-app: #262a33;
+      --bg-dropdown: #2d323d;
+      --bg-input: #1d2028;
       --border: #14161b;
       --border-soft: #1c1f26;
       --text: #c9ccd1;
@@ -10,6 +12,40 @@
       --text-dim: #4b5263;
       --accent: #e5b567;
       --accent-blue: #5c9fe0;
+      --accent-blue-hover: #4a8fd0;
+      --hover-overlay: rgba(255, 255, 255, 0.06);
+      --hover-overlay-soft: rgba(255, 255, 255, 0.05);
+      --hover-overlay-strong: rgba(255, 255, 255, 0.12);
+      --scrollbar-thumb: #3a4050;
+      --modal-backdrop: rgba(0, 0, 0, 0.5);
+      --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.45);
+      --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.5);
+      --console-font-family: "SF Mono", "Fira Code", Consolas, Menlo, monospace;
+      --console-font-size: 12.5px;
+    }
+
+    :root[data-theme="light"] {
+      --bg-menubar: #f3f3f3;
+      --bg-tabbar: #ececec;
+      --bg-tab-active: #ffffff;
+      --bg-app: #ffffff;
+      --bg-dropdown: #ffffff;
+      --bg-input: #ffffff;
+      --border: #d4d4d4;
+      --border-soft: #e5e5e5;
+      --text: #1f2328;
+      --text-muted: #57606a;
+      --text-dim: #8b949e;
+      --accent: #9a6700;
+      --accent-blue: #0969da;
+      --accent-blue-hover: #0857b8;
+      --hover-overlay: rgba(0, 0, 0, 0.05);
+      --hover-overlay-soft: rgba(0, 0, 0, 0.04);
+      --hover-overlay-strong: rgba(0, 0, 0, 0.08);
+      --scrollbar-thumb: #c7c7c7;
+      --modal-backdrop: rgba(0, 0, 0, 0.25);
+      --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.12);
+      --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.18);
     }
 
     * {
@@ -55,7 +91,7 @@
 
     .menu-item.interactive:hover,
     .menu-item.open {
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--hover-overlay);
       color: var(--text);
     }
 
@@ -65,10 +101,10 @@
       top: 100%;
       left: 0;
       min-width: 240px;
-      background: #2d323d;
+      background: var(--bg-dropdown);
       border: 1px solid var(--border);
       border-radius: 4px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      box-shadow: var(--shadow-dropdown);
       padding: 4px;
       z-index: 50;
     }
@@ -132,10 +168,10 @@
       min-width: 260px;
       max-height: 320px;
       overflow-y: auto;
-      background: #2d323d;
+      background: var(--bg-dropdown);
       border: 1px solid var(--border);
       border-radius: 4px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      box-shadow: var(--shadow-dropdown);
       padding: 4px;
       z-index: 60;
     }
@@ -244,7 +280,7 @@
     }
 
     .tab-close:hover {
-      background: rgba(255, 255, 255, 0.12);
+      background: var(--hover-overlay-strong);
       color: var(--text);
     }
 
@@ -269,7 +305,7 @@
     }
 
     input#searchInput {
-      background: #1d2028;
+      background: var(--bg-input);
       border: 1px solid var(--border);
       color: var(--text);
       padding: 5px 10px;
@@ -303,8 +339,8 @@
     }
 
     .console-content {
-      font-family: "SF Mono", "Fira Code", Consolas, Menlo, monospace;
-      font-size: 12.5px;
+      font-family: var(--console-font-family);
+      font-size: var(--console-font-size);
       line-height: 1.7;
       white-space: pre-wrap;
       word-break: break-word;
@@ -322,7 +358,7 @@
     .lvl-info { color: #22c55e; font-weight: 600; }
     .lvl-warn { color: #eab308; font-weight: 600; }
     .lvl-error { color: #ef4444; font-weight: 600; }
-    .log-date { color: #7d8493; }
+    .log-date { color: var(--text-muted); }
     .log-text { color: var(--text); }
 
     .line-no {
@@ -358,7 +394,7 @@
     }
 
     .log-entry-header:hover {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--hover-overlay-soft);
     }
 
     .log-entry:not(.collapsed) > .log-entry-header {
@@ -418,32 +454,34 @@
       background: var(--bg-app);
     }
     ::-webkit-scrollbar-thumb {
-      background: #3a4050;
+      background: var(--scrollbar-thumb);
       border-radius: 6px;
     }
 
     /* ---------- Modal "Acerca de" ---------- */
-    #aboutModal {
+    #aboutModal,
+    #settingsModal {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: var(--modal-backdrop);
       align-items: center;
       justify-content: center;
       z-index: 200;
     }
 
-    #aboutModal.open {
+    #aboutModal.open,
+    #settingsModal.open {
       display: flex;
     }
 
     .about-box {
-      background: #2d323d;
+      background: var(--bg-dropdown);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 22px 24px;
       width: 360px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      box-shadow: var(--shadow-modal);
     }
 
     .about-box h2 {
@@ -481,10 +519,81 @@
     }
 
     .about-close-btn:hover {
-      background: #4a8fd0;
+      background: var(--accent-blue-hover);
     }
 
     .align-right { text-align: right;}
+
+    /* ---------- Modal "Configuración" ---------- */
+    .settings-section {
+      margin-bottom: 18px;
+    }
+
+    .settings-section:last-of-type {
+      margin-bottom: 20px;
+    }
+
+    .settings-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      gap: 8px;
+    }
+
+    .theme-option {
+      flex: 1;
+      padding: 8px 0;
+      background: var(--bg-app);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      cursor: pointer;
+    }
+
+    .theme-option:hover {
+      border-color: var(--accent-blue);
+      color: var(--text);
+    }
+
+    .theme-option.active {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    .settings-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .settings-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      outline: none;
+    }
+
+    .settings-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    #fontFamilyInput {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #fontSizeInput {
+      width: 64px;
+      flex: 0 0 auto;
+    }
 
     /* ---------- Barra de estado inferior (Ln / Col) ---------- */
     #statusFooter {
@@ -495,7 +604,7 @@
       padding: 3px 12px;
       background: var(--bg-menubar);
       border-top: 1px solid var(--border);
-      font-family: "SF Mono", "Fira Code", Consolas, Menlo, monospace;
+      font-family: var(--console-font-family);
       font-size: 11px;
       color: var(--text-muted);
       user-select: none;

@@ -11,9 +11,25 @@ const aboutModal = document.getElementById('aboutModal');
 const aboutCloseBtn = document.getElementById('aboutCloseBtn');
 const cursorPosEl = document.getElementById('cursorPos');
 
+const settingsOption = document.getElementById('settingsOption');
+const settingsModal = document.getElementById('settingsModal');
+const settingsCloseBtn = document.getElementById('settingsCloseBtn');
+const themeDarkOption = document.getElementById('themeDarkOption');
+const themeLightOption = document.getElementById('themeLightOption');
+const fontFamilyInput = document.getElementById('fontFamilyInput');
+const fontSizeInput = document.getElementById('fontSizeInput');
+
 const RECENT_KEY = 'visor-logs:recentFiles';
 const MAX_RECENT = 10;
 const NEAR_BOTTOM_THRESHOLD = 60;
+
+const DEFAULT_CONFIG = {
+  theme: 'dark',
+  fontFamily: '"SF Mono", "Fira Code", Consolas, Menlo, monospace',
+  fontSize: 12.5
+};
+
+let currentConfig = { ...DEFAULT_CONFIG };
 
 // tabs: Map<filePath, { filePath, fileName, contentEl, filterTerm, nextLineNumber, lastEntryState }>
 const tabs = new Map();
@@ -505,6 +521,39 @@ async function openRecentFile(filePath) {
   openOrSwitchTab(result.filePath, result.content);
 }
 
+/* ---------------- Configuración (tema y fuente) ---------------- */
+
+let saveConfigTimer = null;
+
+function applyConfig(config) {
+  document.documentElement.dataset.theme = config.theme === 'light' ? 'light' : 'dark';
+  document.documentElement.style.setProperty('--console-font-family', config.fontFamily);
+  document.documentElement.style.setProperty('--console-font-size', `${config.fontSize}px`);
+
+  themeDarkOption.classList.toggle('active', config.theme !== 'light');
+  themeLightOption.classList.toggle('active', config.theme === 'light');
+}
+
+function persistConfig() {
+  if (saveConfigTimer) clearTimeout(saveConfigTimer);
+  saveConfigTimer = setTimeout(() => {
+    window.api.saveConfig(currentConfig);
+  }, 300);
+}
+
+function setTheme(theme) {
+  currentConfig.theme = theme;
+  applyConfig(currentConfig);
+  persistConfig();
+}
+
+function populateSettingsForm() {
+  fontFamilyInput.value = currentConfig.fontFamily;
+  fontSizeInput.value = currentConfig.fontSize;
+  themeDarkOption.classList.toggle('active', currentConfig.theme !== 'light');
+  themeLightOption.classList.toggle('active', currentConfig.theme === 'light');
+}
+
 /* ---------------- Menú ---------------- */
 
 const menuItems = Array.from(document.querySelectorAll('.menu-item.interactive'));
@@ -530,6 +579,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeAllMenus();
     aboutModal.classList.remove('open');
+    settingsModal.classList.remove('open');
   }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
     e.preventDefault();
@@ -562,6 +612,38 @@ aboutModal.addEventListener('click', (e) => {
   if (e.target === aboutModal) aboutModal.classList.remove('open');
 });
 
+settingsOption.addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeAllMenus();
+  populateSettingsForm();
+  settingsModal.classList.add('open');
+});
+
+settingsCloseBtn.addEventListener('click', () => {
+  settingsModal.classList.remove('open');
+});
+
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) settingsModal.classList.remove('open');
+});
+
+themeDarkOption.addEventListener('click', () => setTheme('dark'));
+themeLightOption.addEventListener('click', () => setTheme('light'));
+
+fontFamilyInput.addEventListener('input', (e) => {
+  currentConfig.fontFamily = e.target.value;
+  applyConfig(currentConfig);
+  persistConfig();
+});
+
+fontSizeInput.addEventListener('input', (e) => {
+  const value = parseFloat(e.target.value);
+  if (Number.isNaN(value) || value <= 0) return;
+  currentConfig.fontSize = value;
+  applyConfig(currentConfig);
+  persistConfig();
+});
+
 searchInput.addEventListener('input', (e) => {
   const term = e.target.value;
   if (activeFilePath && tabs.has(activeFilePath)) {
@@ -575,3 +657,8 @@ window.api.onLogFileChanged(handleLogFileChanged);
 document.addEventListener('selectionchange', updateCursorPosition);
 
 renderRecentFilesMenu();
+
+window.api.loadConfig().then((config) => {
+  currentConfig = { ...DEFAULT_CONFIG, ...config };
+  applyConfig(currentConfig);
+});

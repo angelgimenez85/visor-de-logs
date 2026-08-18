@@ -1,6 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 // Evita el ruido "GetVSyncParametersIfAvailable() failed" en Linux/VMs sin
 // aceleración gráfica completa. Es solo un log de diagnóstico de Chromium,
@@ -183,5 +184,34 @@ ipcMain.handle('file:readLogFile', async (event, filePath) => {
     return { filePath, content };
   } catch (err) {
     return { error: err.message };
+  }
+});
+
+// ---------- Configuración de usuario (tema, fuente) ----------
+const CONFIG_DIR = path.join(os.homedir(), '.visor-logs');
+const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
+
+const DEFAULT_CONFIG = {
+  theme: 'dark',
+  fontFamily: '"SF Mono", "Fira Code", Consolas, Menlo, monospace',
+  fontSize: 12.5
+};
+
+ipcMain.handle('config:load', () => {
+  try {
+    const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
+    return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
+  } catch {
+    return { ...DEFAULT_CONFIG };
+  }
+});
+
+ipcMain.handle('config:save', (event, config) => {
+  try {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
   }
 });

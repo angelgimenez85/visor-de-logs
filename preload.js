@@ -7,5 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   unwatchLogFile: (filePath) => ipcRenderer.invoke('file:unwatchLogFile', filePath),
   onLogFileChanged: (callback) => {
     ipcRenderer.on('file:log-changed', (event, data) => callback(data));
-  }
+  },
+  loadConfig: () => ipcRenderer.invoke('config:load'),
+  saveConfig: (config) => ipcRenderer.invoke('config:save', config)
 });

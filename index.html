@@ -24,6 +24,10 @@
             </div>
           </div>
           <div class="menu-separator"></div>
+          <div class="menu-option" id="settingsOption">
+            <span>Configuración</span>
+          </div>
+          <div class="menu-separator"></div>
           <div class="menu-option" id="quitOption">
             <span>Salir</span>
           </div>
@@ -65,6 +69,32 @@
       </div>
       <div class="about-actions">
         <button class="about-close-btn" id="aboutCloseBtn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsModal">
+    <div class="about-box">
+      <h2>Configuración</h2>
+
+      <div class="settings-section">
+        <div class="settings-label">Tema</div>
+        <div class="theme-toggle">
+          <button type="button" class="theme-option" id="themeDarkOption" data-theme-value="dark">Oscuro</button>
+          <button type="button" class="theme-option" id="themeLightOption" data-theme-value="light">Claro</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">Fuente del editor</div>
+        <div class="settings-row">
+          <input type="text" id="fontFamilyInput" class="settings-input" placeholder="Familia de fuente" />
+          <input type="number" id="fontSizeInput" class="settings-input" min="9" max="24" step="0.5" />
+        </div>
+      </div>
+
+      <div class="about-actions">
+        <button class="about-close-btn" id="settingsCloseBtn">Cerrar</button>
       </div>
     </div>
   </div>
