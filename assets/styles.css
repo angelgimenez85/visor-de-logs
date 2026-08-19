@@ -358,6 +358,7 @@
     .lvl-info { color: #22c55e; font-weight: 600; }
     .lvl-warn { color: #eab308; font-weight: 600; }
     .lvl-error { color: #ef4444; font-weight: 600; }
+    .lvl-debug { color: #3b82f6; font-weight: 600; }
     .log-date { color: var(--text-muted); }
     .log-text { color: var(--text); }
 
@@ -378,6 +379,7 @@
     .log-entry.entry-info { border-left-color: #22c55e; }
     .log-entry.entry-warn { border-left-color: #eab308; }
     .log-entry.entry-error { border-left-color: #ef4444; }
+    .log-entry.entry-debug { border-left-color: #3b82f6; }
 
     .log-entry.hidden {
       display: none;
